@@ -1,0 +1,70 @@
+dataset_name: # Hugging Face dataset name or path
+train_split: train
+eval_split: null
+max_train_samples: null
+max_eval_samples: 20
+use_chat_template: null
+
+model_name_or_path: # Hugging Face model name or path
+teacher_model_name_or_path: # Hugging Face teacher model name or path
+distill_mode: tml
+output_dir: checkpoints
+resume_from_checkpoint: null
+
+num_train_epochs: 1
+max_steps: -1
+learning_rate: 1e-5
+weight_decay: 0.0
+warmup_ratio: 0.0
+lr_scheduler_type: cosine
+
+num_generations: 1
+per_device_train_batch_size: 1
+per_device_eval_batch_size: 4
+gradient_accumulation_steps: 64
+gradient_checkpointing: true
+
+max_prompt_length: 1024
+max_completion_length: 2048
+temperature: 1.0
+top_p: 1.0
+top_k: -1
+min_p: 0.0
+presence_penalty: 0.0
+
+logging_steps: 1
+save_steps: 20
+eval_steps: 20
+save_total_limit: 100
+
+torch_dtype: bfloat16
+attn_implementation: flash_attention_2
+
+beta: null
+gamma: null
+use_baseline: false
+kl_top_k: -1
+opd_top_k: -1
+
+use_vllm: true
+vllm_mode: colocate
+vllm_gpu_memory_utilization: 0.6
+vllm_tensor_parallel_size: 1
+
+use_peft: true
+lora_r: 64
+lora_alpha: 128
+lora_dropout: 0.05
+lora_target_modules:
+  - q_proj
+  - k_proj
+  - v_proj
+  - o_proj
+  - gate_proj
+  - up_proj
+  - down_proj
+
+report_to: wandb
+wandb_project: OPD_TRL
+run_name: null
+seed: 42

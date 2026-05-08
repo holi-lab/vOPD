@@ -1,0 +1,6 @@
+defaults:
+  - default
+  
+distill_mode: gkd_rkl
+use_baseline: false
+kl_top_k: -1

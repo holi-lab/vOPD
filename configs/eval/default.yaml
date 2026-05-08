@@ -1,0 +1,32 @@
+root_dir: .
+output_file: null
+
+runtime:
+  nccl_p2p_disable: "1"
+  tensor_parallel_size: 1
+  gpu_memory_utilization: 0.9
+
+math:
+  enable_thinking: false
+  use_chat_template: false
+  val_n: 8
+  max_new_tokens: 4096
+  max_len: 8192
+  top_p: 1.0
+  top_k: -1
+  min_p: 0.0
+  presence_penalty: 0.0
+  num_samples: null
+
+mcq:
+  enable_thinking: false
+  use_chat_template: false
+  val_n: 8
+  max_new_tokens: 4096
+  max_len: 4096
+  top_p: 0.95
+  top_k: 20
+  min_p: 0.0
+  presence_penalty: 0.0
+  num_samples: null
+  answer_index_base: 0

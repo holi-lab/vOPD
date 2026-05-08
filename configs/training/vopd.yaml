@@ -1,0 +1,6 @@
+defaults:
+  - default
+  
+distill_mode: tml
+use_baseline: true
+kl_top_k: 0
