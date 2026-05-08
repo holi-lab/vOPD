@@ -1,6 +1,6 @@
 # vOPD
 
-/TBD
+Code for "KL for a KL: On-Policy Distillation with Control Variate Baseline"
 
 ## Installation
 
