@@ -8,6 +8,8 @@ import torch.nn.functional as F
 from trl.experimental.minillm import MiniLLMTrainer
 from trl.trainer.utils import selective_log_softmax
 
+from src.grad_variance import GradientVarianceTracker
+
 
 class CustomMiniLLMTrainer(MiniLLMTrainer):
     def __init__(
@@ -16,6 +18,8 @@ class CustomMiniLLMTrainer(MiniLLMTrainer):
         use_baseline: bool = False,
         kl_top_k: int = -1,
         opd_top_k: int = -1,
+        log_grad_variance: bool = False,
+        grad_variance_logging_steps: int = 1,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -23,14 +27,35 @@ class CustomMiniLLMTrainer(MiniLLMTrainer):
         self.kl_top_k = kl_top_k
         self.opd_top_k = opd_top_k
         self.use_top_k_opd = opd_top_k > 0
+        self.grad_variance_tracker = (
+            GradientVarianceTracker(every_n_steps=grad_variance_logging_steps)
+            if log_grad_variance
+            else None
+        )
+
+    @staticmethod
+    def _topk_log_softmax(logits, indices):
+        selected_logits = torch.gather(logits, dim=-1, index=indices)
+        return selected_logits - torch.logsumexp(logits, dim=-1, keepdim=True)
+
+    def log(self, logs, start_time=None):
+        if self.grad_variance_tracker is not None and self.model.training:
+            logs.update(
+                self.grad_variance_tracker.metrics(
+                    self.optimizer,
+                    accelerator=self.accelerator,
+                    step=self.state.global_step,
+                )
+            )
+        super().log(logs, start_time)
 
     def _topk_opd_single_step_loss(self, student_logits, teacher_logits, mask):
         top_k = min(self.opd_top_k, student_logits.size(-1))
         topk_ids = torch.topk(student_logits.detach(), top_k, dim=-1).indices  # [B, T, K]
-        student_topk_logp = selective_log_softmax(student_logits, topk_ids)  # [B, T, K]
+        student_topk_logp = self._topk_log_softmax(student_logits, topk_ids)  # [B, T, K]
 
         with torch.no_grad():
-            teacher_topk_logp = selective_log_softmax(teacher_logits, topk_ids)  # [B, T, K]
+            teacher_topk_logp = self._topk_log_softmax(teacher_logits, topk_ids)  # [B, T, K]
 
         student_topk_logp = student_topk_logp - torch.logsumexp(
             student_topk_logp, dim=-1, keepdim=True
@@ -95,8 +120,8 @@ class CustomMiniLLMTrainer(MiniLLMTrainer):
                     kl_indices = torch.topk(student_logits, top_k, dim=-1).indices
 
                     if student_log_probs is None:
-                        student_log_probs_for_baseline = selective_log_softmax(student_logits, kl_indices)
-                        teacher_log_probs_for_baseline = selective_log_softmax(teacher_logits, kl_indices)
+                        student_log_probs_for_baseline = self._topk_log_softmax(student_logits, kl_indices)
+                        teacher_log_probs_for_baseline = self._topk_log_softmax(teacher_logits, kl_indices)
                     else:
                         student_log_probs_for_baseline = torch.gather(
                             student_log_probs, dim=-1, index=kl_indices

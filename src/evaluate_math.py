@@ -8,6 +8,7 @@ from util import (
     build_math_eval_output_file,
     create_lora_request,
     dataset_display_name,
+    extract_boxed_answer,
     extract_math_eval_example,
     format_prompt_for_model,
     load_vllm_model,

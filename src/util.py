@@ -25,9 +25,11 @@ TRAINING_CONFIG_ALLOWED_KEYS = {
     "eval_split",
     "eval_steps",
     "gamma",
+    "grad_variance_logging_steps",
     "gradient_accumulation_steps",
     "gradient_checkpointing",
     "kl_top_k",
+    "log_grad_variance",
     "learning_rate",
     "logging_steps",
     "lora_alpha",
@@ -100,7 +102,7 @@ class MathEvalExample:
 DATASET_SPECS = {
     "dapo14k": DatasetSpec(
         canonical_name="dapo14k",
-        path="/path/to/dapo",
+        path="guanning-ai/dapo14k",
         aliases=("dapo", "dapo14k"),
         train_split="train",
         eval_split="train",
@@ -108,7 +110,7 @@ DATASET_SPECS = {
     ),
     "math500": DatasetSpec(
         canonical_name="math500",
-        path="/path/to/math500",
+        path="HuggingFaceH4/MATH-500",
         aliases=("math500", "math-500"),
         train_split="test",
         eval_split="test",

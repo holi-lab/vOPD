@@ -173,7 +173,7 @@ if __name__ == "__main__":
             r=args.lora_r,
             lora_alpha=args.lora_alpha,
             lora_dropout=args.lora_dropout,
-            target_modules=args.lora_target_modules,
+            target_modules=list(args.lora_target_modules),
             bias="none",
         )
 
@@ -188,6 +188,8 @@ if __name__ == "__main__":
         use_baseline=args.use_baseline,
         kl_top_k=args.kl_top_k,
         opd_top_k=args.opd_top_k,
+        log_grad_variance=args.log_grad_variance,
+        grad_variance_logging_steps=args.grad_variance_logging_steps,
     )
 
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
