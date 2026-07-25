@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import os
 
 import torch
@@ -18,15 +19,23 @@ class CustomMiniLLMTrainer(MiniLLMTrainer):
         use_baseline: bool = False,
         kl_top_k: int = -1,
         opd_top_k: int = -1,
+        reward_clip_lambda: float | None = None,
         log_grad_variance: bool = False,
         grad_variance_logging_steps: int = 1,
         **kwargs,
     ):
+        if reward_clip_lambda is not None and not 0.0 < reward_clip_lambda < 1.0:
+            raise ValueError("reward_clip_lambda must be between 0 and 1")
         super().__init__(*args, **kwargs)
         self.use_baseline = use_baseline
         self.kl_top_k = kl_top_k
         self.opd_top_k = opd_top_k
         self.use_top_k_opd = opd_top_k > 0
+        self.reward_clip_boundary = (
+            math.log(reward_clip_lambda) / (1.0 - reward_clip_lambda)
+            if reward_clip_lambda is not None
+            else None
+        )
         self.grad_variance_tracker = (
             GradientVarianceTracker(every_n_steps=grad_variance_logging_steps)
             if log_grad_variance
@@ -37,6 +46,28 @@ class CustomMiniLLMTrainer(MiniLLMTrainer):
     def _topk_log_softmax(logits, indices):
         selected_logits = torch.gather(logits, dim=-1, index=indices)
         return selected_logits - torch.logsumexp(logits, dim=-1, keepdim=True)
+
+    def _compute_reward_clipped_advantage(
+        self,
+        student_log_probs_on_labels,
+        teacher_log_probs_on_labels,
+        mask,
+    ):
+        if self.reward_clip_boundary is None:
+            return self._compute_advantage(
+                student_log_probs_on_labels=student_log_probs_on_labels,
+                teacher_log_probs_on_labels=teacher_log_probs_on_labels,
+                mask=mask,
+            )
+        student_log_probs_on_labels = student_log_probs_on_labels.detach()
+        rewards = (
+            teacher_log_probs_on_labels - student_log_probs_on_labels
+        ).detach().clamp_min(self.reward_clip_boundary)
+        return self._compute_advantage(
+            student_log_probs_on_labels=student_log_probs_on_labels,
+            teacher_log_probs_on_labels=student_log_probs_on_labels + rewards,
+            mask=mask,
+        )
 
     def log(self, logs, start_time=None):
         if self.grad_variance_tracker is not None and self.model.training:
@@ -194,7 +225,7 @@ class CustomMiniLLMTrainer(MiniLLMTrainer):
 
         else:
             if self.rkl_advantage:
-                reverse_kl_advantage = self._compute_advantage(
+                reverse_kl_advantage = self._compute_reward_clipped_advantage(
                     student_log_probs_on_labels=student_log_probs_on_labels,
                     teacher_log_probs_on_labels=teacher_log_probs_on_labels,
                     mask=mask,

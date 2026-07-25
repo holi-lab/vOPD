@@ -53,6 +53,7 @@ TRAINING_CONFIG_ALLOWED_KEYS = {
     "per_device_train_batch_size",
     "presence_penalty",
     "report_to",
+    "reward_clip_lambda",
     "resume_from_checkpoint",
     "run_name",
     "save_steps",

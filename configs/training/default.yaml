@@ -44,6 +44,7 @@ attn_implementation: flash_attention_2
 
 beta: null
 gamma: null
+reward_clip_lambda: null
 use_baseline: false
 kl_top_k: -1
 opd_top_k: -1

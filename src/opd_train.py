@@ -188,6 +188,7 @@ if __name__ == "__main__":
         use_baseline=args.use_baseline,
         kl_top_k=args.kl_top_k,
         opd_top_k=args.opd_top_k,
+        reward_clip_lambda=args.reward_clip_lambda,
         log_grad_variance=args.log_grad_variance,
         grad_variance_logging_steps=args.grad_variance_logging_steps,
     )
